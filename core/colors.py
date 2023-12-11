@@ -1,8 +1,7 @@
 import sys
-
 colors = True # Output should be colored
 machine = sys.platform # Detecting the os of current system
-if machine.lower().startswith(('os', 'win', 'ios')):
+if machine.lower().startswith(('os', 'win', 'darwin', 'ios')):
     colors = False # Colors shouldn't be displayed in mac & windows
 if not colors:
     white = green = red = yellow = end = back = info = que = bad = good = run = res = ''
@@ -19,3 +18,21 @@ else:
     good = '\033[1;32m[+]\033[0m'
     run = '\033[1;97m[*]\033[0m'
     res = '\033[1;92m[✓]\033[0m'
+    
+    
+#print all colors
+def print_colors():
+    print(white + "White")
+    print(green + "Green")
+    print(red + "Red")
+    print(yellow + "Yellow")
+    print(end + "End")
+    print(back + "Back")
+    print(info + "Info")
+    print(que + "Que")
+    print(bad+"bad")
+    print(good + "Good")
+    print(run + "Run")
+    print(res + "Res")
+    
+# print_colors()

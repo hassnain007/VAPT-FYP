@@ -1,42 +1,41 @@
-#!/usr/bin/python3
-"""
-This Module detect the tech stack on the website using the wappalyzer api
-"""
+# tech_detect.py
 
-from concurrent.futures import ThreadPoolExecutor as Executor  
-from Wappalyzer import Wappalyzer, WebPage  
-
+import threading
+from Wappalyzer import Wappalyzer, WebPage
+from core.colors import red, green
+import warnings
+warnings.filterwarnings("ignore", message="""Caught 'unbalanced parenthesis at position 119' compiling regex""", category=UserWarning )
 wappalyzer = Wappalyzer.latest()
 
-
-def check(out,url):
+def check(out, url):
     if not url.startswith('http://') and not url.startswith('https://'):
-        url = 'https'+url
+        url = 'https://' + url
     try:
         webpage = WebPage.new_from_url(url)
         tech = wappalyzer.analyze(webpage)
         if out != 'None':
-            with open(out,'a') as f:
+            with open(out, 'a') as f:
                 f.write(f"{url} | {' - '.join(tech)}\n")
         else:
-             return tech
+            print(green + tech)
     except Exception as e:
-        print(e)
-    
-def scan_domain(domain,threads=5):
-    with Executor(max_workers=int(threads)) as exe:
-                    print(f"[+] Domain: {domain}")
-                    exe.submit(check,domain)
-    
+        print(red + str(e))
 
-def scan_file(file, threads, out):
+def scan_domain(domain, threads=5):
+    print(f"[+] Domain: {domain}")
+    thread = threading.Thread(target=check, args=('None', domain))
+    thread.start()
+
+def scan_file(file, out, threads=5):
     domains = []
     if file != 'None':
         with open(file, 'r') as file:
-             domains = [line.strip() for line in file]
-             with Executor(max_workers=int(threads)) as exe:
-                for domain in domains:
-                    print(f"[+] Domain: {domain}")
-                    exe.submit(check, out, domain)
-    
-    
+            domains = [line.strip() for line in file]
+
+        for domain in domains:
+            print(f"[+] Domain: {domain}")
+            thread = threading.Thread(target=check, args=(out, domain))
+            thread.start()
+
+if __name__ == "__main__":
+    check('None', 'https://mashriqtv.pk/')
