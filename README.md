@@ -4,7 +4,7 @@ The Penetration Testing Tool is a comprehensive solution tailored for web and ne
 
 Key Features
 
-Port Scanning (Network): Conduct network reconnaissance using SYN, Ping, Vanilla, and Xmas scans to identify open ports.
+Port Scanning (Network): Conduct network reconnaissance using SYN, Ping, Vanilla, to identify open ports.
 
 Web Application Assessment:
 
