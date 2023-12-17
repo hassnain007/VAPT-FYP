@@ -101,40 +101,53 @@ class Complete_Network_Scanner:
 
         return open_ports, filtered_ports, open_or_filtered
 
-    def common_scan(self, stealth=None, sv=None):
+    def common_scan(self,stealth=None,sv=None):
+        # print_figlet()
+
         if not self.protocol:
             protocol = "TCP"
         else:
             protocol = self.protocol
 
-        ports = [21, 22, 80, 443, 3306, 14147, 2121, 8080, 8000]
+        ports = [21,22,80,443,3306,14147,2121,8080,8000]
         open_ports = []
         filtered_ports = []
         open_or_filtered = []
 
-        def perform_scan(port, scan_function):
-            scan_result = scan_function(port=port, stealth=stealth)
-            if scan_result:
+        if stealth:
+            logging.info("Starting - Stealth TCP Port Scan\n")
+            for port in ports:
+            
+                scan = self.syn_scan(port=port,stealth=stealth)
+        
+                if scan:
+                    ports_saved = {
+                        "open": open_ports,
+                        "filtered": filtered_ports,
+                        "open/filtered": open_or_filtered
+                    }
+
+                    open_ports, filtered_ports, open_or_filtered = self.handle_port_response(ports_saved=ports_saved,response=scan,port=port)
+        else:
+            if protocol == "TCP":
+                logging.info("Starting - TCP Connect Port Scan\n")
+            elif protocol == "UDP":
+                logging.info("Starting - UDP Port Scan\n")
+            else:
+                pass
+
+        for port in ports:
+            
+            scan = self.port_Scan_Tcp_Udp(port=port)
+        
+            if scan:
                 ports_saved = {
                     "open": open_ports,
                     "filtered": filtered_ports,
                     "open/filtered": open_or_filtered
                 }
-                self.handle_port_response(
-                    ports_saved=ports_saved, response=scan_result, port=port
-                )
 
-        if stealth:
-            logging.info("Starting - Stealth TCP Port Scan\n")
-            for port in ports:
-                perform_scan(port, self.syn_scan)
-        else:
-            scan_function = self.port_Scan_Tcp_Udp if protocol in {"TCP", "UDP"} else None
-
-            if scan_function:
-                logging.info(f"Starting - {protocol} Connect Port Scan\n")
-                for port in ports:
-                    perform_scan(port, scan_function)
+                open_ports, filtered_ports, open_or_filtered = self.handle_port_response(ports_saved=ports_saved,response=scan,port=port)
 
         if open_ports or filtered_ports or open_or_filtered:
             total = len(open_ports) + len(filtered_ports) + len(open_or_filtered)
@@ -148,6 +161,7 @@ class Complete_Network_Scanner:
                 logging.warning(f"Port: {port} - Filtered")
             for port in open_or_filtered:
                 logging.info(f"Port: {port} - Open/Filtered")
+
 
     
 
