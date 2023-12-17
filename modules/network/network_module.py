@@ -14,7 +14,7 @@ from colorama import Fore
 import rpycolors
 from progress.bar import ChargingBar
 import concurrent.futures
-from service_detections import *
+import service_detections
 
 class Complete_Network_Scanner:
     def __init__(self, target=None, my_ip=None, protocol=None, timeout=5, interface=None):
@@ -196,8 +196,7 @@ class Complete_Network_Scanner:
         except Exception as e:
             return f"An error occurred during ARP request: {e}", []
         
-    def detect_services(ip_address,port):
-        
+   
         
 
 
@@ -213,7 +212,10 @@ class Complete_Network_Scanner:
 
         if host_found:
             result[index] = host_found[0]
-            
+    def service_Scan(self, ports):
+        target_ip = self.target
+        service_detections.scan_for_services(target_ip, ports)
+        
 
     def discover_net(self, ip_range=24):
         protocol = self.protocol
@@ -268,6 +270,7 @@ class Complete_Network_Scanner:
 
 # Create an instance of the Complete_Network_Scanner
 scanner = Complete_Network_Scanner(target="192.168.100.1", protocol="TCP")
+scanner.service_Scan([22, 53, 80, 443])
 
 # Test the port_Scan_Tcp_Udp function for TCP ports
 ports_to_test = [21, 22, 23, 53, 80, 443]
@@ -282,3 +285,4 @@ scanner.protocol = "UDP"  # Switch to UDP protocol
 for port in ports_to_test:
     result = scanner.port_Scan_Tcp_Udp(port=port)
     print(f"UDP Port {port}: {result}")
+
