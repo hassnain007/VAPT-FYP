@@ -163,7 +163,75 @@ class Complete_Network_Scanner:
                 logging.info(f"Port: {port} - Open/Filtered")
 
 
-    
+    def scan_range_of_ports(self,start,end=None,stealth=None,sv=None):
+        open_ports = []
+        filtered_ports = []
+        open_or_filtered = []
+        protocol = self.protocol
+
+        if not protocol:
+            protocol = "TCP"
+
+        
+        if protocol == "TCP" and stealth:
+            logging.info("Starting - TCP Stealth Port Scan\n")
+        elif protocol == "TCP" and not stealth:
+            logging.info("Starting - TCP Connect Port Scan\n")
+        elif protocol == "UDP":
+            logging.info("Starting - UDP Port Scan\n")
+        else:
+            pass
+
+        if end:
+            for port in range(start,end):
+                scan = self.port_Scan_Tcp_Udp(stealth,port=port)
+
+                if scan:
+                    ports_saved = {
+                        "open": open_ports,
+                        "filtered": filtered_ports,
+                        "open/filtered": open_or_filtered
+                    }
+
+                    open_ports, filtered_ports, open_or_filtered = self.handle_port_response(ports_saved=ports_saved,response=scan,port=port)
+
+            if open_ports or filtered_ports or open_or_filtered:
+                total = len(open_ports) + len(filtered_ports) + len(open_or_filtered)
+
+                # print_figlet()
+                logging.info(f"Founded {total} ports!")
+
+                for port in open_ports:
+                    logging.info(f"Port: {port} - Open")
+                for port in filtered_ports:
+                    logging.warning(f"Port: {port} - Filtered")
+                for port in open_or_filtered:
+                    logging.info(f"Port: {port} - Open/Filtered")
+        else:
+            scan = self.syn_scan(stealth)
+
+            if scan:
+                    ports_saved = {
+                        "open": open_ports,
+                        "filtered": filtered_ports,
+                        "open/filtered": open_or_filtered
+                    }
+
+                    open_ports, filtered_ports, open_or_filtered = self.handle_port_response(ports_saved=ports_saved,response=scan,port=start)
+
+            if open_ports or filtered_ports or open_or_filtered:
+                total = len(open_ports) + len(filtered_ports) + len(open_or_filtered)
+
+                # print_figlet()
+                logging.info(f"Founded {total} ports!")
+
+                for port in open_ports:
+                    logging.info(f"Port: {port} - Open")
+                for port in filtered_ports:
+                    logging.debug(f"Port: {port} - Filtered")
+                for port in open_or_filtered:
+                    logging.info(f"Port: {port} - Open/Filtered")
+
 
     def multi_host_syn_scan(self,targets=None, ports=None):
         open_ports_dict = {}
@@ -180,7 +248,7 @@ class Complete_Network_Scanner:
                         open_ports_dict[target] = []
                     open_ports_dict[target].append(port)
 
-    def host_discovery_using_arp_requests(ip_range, cidr=24, timeout=2):
+    def host_discovery_using_arp_requests(ip_range, cidr=24, timeout=5):
         def is_valid_subnet(cidr):
             try:
                 cidr = int(cidr)
