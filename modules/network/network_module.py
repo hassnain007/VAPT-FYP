@@ -14,7 +14,7 @@ from colorama import Fore
 import rpycolors
 from progress.bar import ChargingBar
 import concurrent.futures
-import service_detections
+from modules.network import service_detections
 
 class Complete_Network_Scanner:
     def __init__(self, target=None, my_ip=None, protocol=None, timeout=5, interface=None):
@@ -349,22 +349,4 @@ class Complete_Network_Scanner:
         else:
             logging.critical("[[red]-[/red]]Invalid protocol for this scan")
             return False
-
-# Create an instance of the Complete_Network_Scanner
-scanner = Complete_Network_Scanner(target="192.168.100.1", protocol="TCP")
-scanner.service_Scan([22, 53, 80, 443])
-
-# Test the port_Scan_Tcp_Udp function for TCP ports
-ports_to_test = [21, 22, 23, 53, 80, 443]
-
-for port in ports_to_test:
-    result = scanner.port_Scan_Tcp_Udp(port=port)
-    print(f"TCP Port {port}: {result}")
-
-# Test the port_Scan_Tcp_Udp function for UDP ports
-scanner.protocol = "UDP"  # Switch to UDP protocol
-
-for port in ports_to_test:
-    result = scanner.port_Scan_Tcp_Udp(port=port)
-    print(f"UDP Port {port}: {result}")
 
