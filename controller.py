@@ -1,5 +1,13 @@
 from core.colors import *
-from modules.network import network_module
+try:
+    __import__("modules.network.network_module")
+    from  modules.network import network_module
+except:
+    err_msg = "Wrong installation detected (missing modules). "
+    err_msg = "Visit 'https://github.com/commixproject/commix/' for further details. \n"
+    
+raise SystemExit()
+
 from modules.web import wFuzzer
 import argparse
 import logging
@@ -48,6 +56,7 @@ def print_figlet(sleep=True):
 
 
 if __name__ == '__main__':
+    print_figlet()
     parser = argparse.ArgumentParser(description="Network & web testing Tool",
                                      usage="\n for network: controller.py -sC 192.168.0.106\n\tcontroller.py -sA 192.168.0.106")
 
@@ -118,7 +127,7 @@ if __name__ == '__main__':
         ip = s.getsockname()[0]
         s.close()
 
-        scanner = network_module.Complete_Network_Scanner(target=args.Target, my_ip=ip, protocol=args.protocol,
+        scanner = networking.Complete_Network_Scanner(target=args.Target, my_ip=ip, protocol=args.protocol,
                                                           timeout=args.timeout, interface=args.interface)
 
         if args.scan_common:
