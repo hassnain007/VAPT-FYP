@@ -9,12 +9,25 @@ import logging
 from scapy.all import IP, TCP, sr1, sr, ICMP, UDP, srp, ARP, Ether, send
 from ctypes import *
 from time import sleep
+from colorama import Fore
 from threading import Thread
 from colorama import Fore
 import rpycolors
 from progress.bar import ChargingBar
 import concurrent.futures
 from modules.network import service_detections
+
+print = rpycolors.Console().print
+
+white   = Fore.WHITE
+black   = Fore.BLACK
+red     = Fore.RED
+reset   = Fore.RESET
+blue    = Fore.BLUE
+cyan    = Fore.CYAN
+yellow  = Fore.YELLOW
+green   = Fore.GREEN
+magenta = Fore.MAGENTA
 
 class Complete_Network_Scanner:
     def __init__(self, target=None, my_ip=None, protocol=None, timeout=5, interface=None):
@@ -24,61 +37,58 @@ class Complete_Network_Scanner:
         self.timeout = timeout
         self.interface = interface
 
-    def syn_scan(self, stealth=None, port=80):
+    def port_scan(self,stealth=None,port=80):
         protocol = self.protocol if self.protocol else "TCP"
 
-        pkt = IP(dst=self.target) / TCP(dport=port, flags="S")
-        scan = sr1(pkt, timeout=self.timeout, verbose=0)
+        if stealth:
+            pkt = IP(dst=self.target)/TCP(dport=port,flags="S")
+            scan = sr1(pkt,timeout=self.timeout,verbose=0)
 
-        if scan is None:
-            return {port: 'Filtered'}
-
-        elif scan.haslayer(TCP):
-            if scan.getlayer(TCP).flags == 0x12:  # 0x12 SYN+ACk
-                pkt = IP(dst=self.target) / TCP(dport=port, flags="R")
-                send_rst = sr(pkt, timeout=self.timeout, verbose=0)
-                return {port: 'Open'}
-            elif scan.getlayer(TCP).flags == 0x14:
-                return {port: 'Closed'}
-        elif scan.haslayer(ICMP):
-            if int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code in [1, 2, 3, 9, 10, 13]):
+            if scan == None:
                 return {port: 'Filtered'}
 
-    def port_Scan_Tcp_Udp(self, stealth=None, port=80):
-        protocol = self.protocol if self.protocol else "TCP"
-
-        if protocol == "TCP":
-            pkt = IP(dst=self.target) / TCP(dport=port, flags="S")
-            scan = sr1(pkt, timeout=self.timeout, verbose=0)
-
-            if scan is None:
-                return {port: 'Filtered'}
             elif scan.haslayer(TCP):
-                if scan.getlayer(TCP).flags == 0x12:  # 0x12 SYN+ACk
-                    pkt = IP(dst=self.target) / TCP(dport=port, flags="RA")  # Change flags to "RA"
-                    send(pkt, verbose=0)  # Use send() instead of sr()
+                if scan.getlayer(TCP).flags == 0x12: # 0x12 SYN+ACk
+                    pkt = IP(dst=self.target)/TCP(dport=port,flags="R")
+                    send_rst = sr(pkt,timeout=self.timeout,verbose=0)
+
                     return {port: 'Open'}
                 elif scan.getlayer(TCP).flags == 0x14:
                     return {port: 'Closed'}
-                else:
-                    # If the flags don't match open or closed, consider it filtered
-                    return {port: 'Filtered'}
-        elif protocol == "UDP":
-            pkt = IP(dst=self.target) / UDP(dport=port)
-            scan = sr1(pkt, timeout=self.timeout, verbose=0)
-
-            if scan is None:
-                return {port: 'Filtered'}
-            elif scan.haslayer(UDP):
-                return {port: 'Closed'}
             elif scan.haslayer(ICMP):
-                if int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code) == 3:
-                    return {port: 'Closed'}
-                elif int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code) in [1, 2, 9, 10, 13]:
-                    return {port: 'Closed'}
-                else:
-                    # If the ICMP type and code don't match closed, consider it filtered
+                if int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code in [1,2,3,9,10,13]):
                     return {port: 'Filtered'}
+
+        else:
+            if protocol == "TCP":
+                pkt = IP(dst=self.target)/TCP(dport=port,flags="S")
+                scan = sr1(pkt,timeout=self.timeout,verbose=0)
+
+                if scan == None:
+                    return {port: 'Filtered'}
+
+                elif scan.haslayer(TCP):
+                    if scan.getlayer(TCP).flags == 0x12: # 0x12 SYN+ACk
+                        pkt = IP(dst=self.target)/TCP(dport=port,flags="AR")
+                        send_rst = sr(pkt,timeout=self.timeout,verbose=0)
+
+                        return {port: 'Open'}
+                    elif scan.getlayer(TCP).flags == 0x14:
+                        return {port: 'Closed'}
+
+            elif protocol == "UDP":
+                pkt = IP(dst=self.target)/UDP(dport=port)
+                scan = sr1(pkt, timeout=self.timeout,verbose=0)
+
+                if scan == None:
+                    return {port: 'Open/Filtered'}
+                elif scan.haslayer(UDP):
+                    return {port: 'Closed'}
+                elif scan.haslayer(ICMP):
+                    if int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code) == 3:
+                        return {port: 'Closed'}
+                    elif int(scan.getlayer(ICMP).type) == 3 and int(scan.getlayer(ICMP).code) in [1,2,9,10,13]:
+                        return {port: 'Closed'}
 
     def handle_port_response(self, ports_saved, response, port):
         open_ports = ports_saved['open']
@@ -102,7 +112,7 @@ class Complete_Network_Scanner:
         return open_ports, filtered_ports, open_or_filtered
 
     def common_scan(self,stealth=None,sv=None):
-        # print_figlet()
+       
 
         if not self.protocol:
             protocol = "TCP"
@@ -116,18 +126,6 @@ class Complete_Network_Scanner:
 
         if stealth:
             logging.info("Starting - Stealth TCP Port Scan\n")
-            for port in ports:
-            
-                scan = self.syn_scan(port=port,stealth=stealth)
-        
-                if scan:
-                    ports_saved = {
-                        "open": open_ports,
-                        "filtered": filtered_ports,
-                        "open/filtered": open_or_filtered
-                    }
-
-                    open_ports, filtered_ports, open_or_filtered = self.handle_port_response(ports_saved=ports_saved,response=scan,port=port)
         else:
             if protocol == "TCP":
                 logging.info("Starting - TCP Connect Port Scan\n")
@@ -138,7 +136,7 @@ class Complete_Network_Scanner:
 
         for port in ports:
             
-            scan = self.port_Scan_Tcp_Udp(port=port)
+            scan = self.port_scan(port=port,stealth=stealth)
         
             if scan:
                 ports_saved = {
@@ -163,7 +161,7 @@ class Complete_Network_Scanner:
                 logging.info(f"Port: {port} - Open/Filtered")
 
 
-    def scan_range_of_ports(self,start,end=None,stealth=None,sv=None):
+    def scan_range_of_ports(self, start, end=None, stealth=None, sv=None):
         open_ports = []
         filtered_ports = []
         open_or_filtered = []
@@ -184,7 +182,7 @@ class Complete_Network_Scanner:
 
         if end:
             for port in range(start,end):
-                scan = self.port_Scan_Tcp_Udp(stealth,port=port)
+                scan = self.port_scan(stealth,port=port)
 
                 if scan:
                     ports_saved = {
@@ -198,7 +196,7 @@ class Complete_Network_Scanner:
             if open_ports or filtered_ports or open_or_filtered:
                 total = len(open_ports) + len(filtered_ports) + len(open_or_filtered)
 
-                # print_figlet()
+                
                 logging.info(f"Founded {total} ports!")
 
                 for port in open_ports:
@@ -208,7 +206,7 @@ class Complete_Network_Scanner:
                 for port in open_or_filtered:
                     logging.info(f"Port: {port} - Open/Filtered")
         else:
-            scan = self.syn_scan(stealth)
+            scan = self.port_scan(stealth)
 
             if scan:
                     ports_saved = {
@@ -222,7 +220,7 @@ class Complete_Network_Scanner:
             if open_ports or filtered_ports or open_or_filtered:
                 total = len(open_ports) + len(filtered_ports) + len(open_or_filtered)
 
-                # print_figlet()
+                
                 logging.info(f"Founded {total} ports!")
 
                 for port in open_ports:
@@ -233,20 +231,7 @@ class Complete_Network_Scanner:
                     logging.info(f"Port: {port} - Open/Filtered")
 
 
-    def multi_host_syn_scan(self,targets=None, ports=None):
-        open_ports_dict = {}
     
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Use list comprehension to submit tasks to the thread pool
-            futures = [executor.submit(self.syn_scan, target, port) for target in targets for port in ports]
-
-            # Iterate through the completed futures to get results
-            for future in concurrent.futures.as_completed(futures):
-                target, port, open_ports = future.result()
-                if open_ports:
-                    if target not in open_ports_dict:
-                        open_ports_dict[target] = []
-                    open_ports_dict[target].append(port)
 
     def host_discovery_using_arp_requests(ip_range, cidr=24, timeout=5):
         def is_valid_subnet(cidr):
@@ -298,7 +283,18 @@ class Complete_Network_Scanner:
         target_ip = self.target
         service_detections.scan_for_services(target_ip, ports)
         
-
+    def vanilla_scan_single_host(ip_address, port):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                s.connect((ip_address, port))
+                print(f"IP: {ip_address}, Port: {port}, Status: Open")
+                return port
+        except Exception:
+            pass
+        print(f"IP: {ip_address}, Port: {port}, Status: Closed or Filtered")
+        return None
+                
     def discover_net(self, ip_range=24):
         protocol = self.protocol
         base_ip = self.my_ip
@@ -350,3 +346,81 @@ class Complete_Network_Scanner:
             logging.critical("[[red]-[/red]]Invalid protocol for this scan")
             return False
 
+
+
+def arguments():
+    parser = argparse.ArgumentParser(description="Network module",usage="\n\network_module.py -sC 192.168.0.106\n\network_module.py -sA 192.168.0.106")
+    parser.add_argument('-vS', "--vanilla-scan", help="Run vanilla scan on specified IP and port", nargs=2, metavar=('IP', 'PORT'), type=str,action="count")
+    parser.add_argument('-sC',"--scan-common",help="Scan common ports",action="count")
+    parser.add_argument('-sA',"--scan-all",help="Scan all ports",action="count")
+    parser.add_argument('-sO',"--scan-os",help="Scan OS",action="count")
+    parser.add_argument('-sP',"--scan-port",help="Scan defined port")
+    parser.add_argument('-sV',"--scan-service",help="Try to detect service running")
+    parser.add_argument('-d',"--discover",help="Discover hosts in the network",action="count")
+    parser.add_argument('-p',"--protocol",help="Protocol to use in the scans. ICMP,UDP,TCP.",type=str,choices=['ICMP','UDP','TCP'],default=None)
+    parser.add_argument('-i',"--interface",help="Interface to use",default=None)
+    parser.add_argument('-t',"--timeout",help="Timeout to each request",default=5,type=int)
+    parser.add_argument('-st',"--stealth",help="Use Stealth scan method (TCP)",action="count")
+    parser.add_argument('-v',"--verbose",action="count")
+    parser.add_argument('Target',nargs='?',default=None)
+    parser.add_argument('-dARP', "--discover-arp", help="Discover hosts in the network using ARP request", nargs=2, metavar=('IP_RANGE', 'CIDR'), type=str,action="count")
+    args = parser.parse_args()
+    
+
+    if not args.discover and not args.Target:
+        sys.exit(parser.print_help())
+
+    if not args.scan_common and not args.scan_all and not args.scan_os and not args.scan_port and not args.discover and not args.vanilla_scan and not args.dARP:
+        sys.exit(parser.print_help())
+
+    return (args, parser)
+
+if __name__ == '__main__':
+    args, parser = arguments() 
+
+    del logging.root.handlers[:]
+  
+    logging.addLevelName(logging.CRITICAL, f"[{red}!!{reset}]")
+    logging.addLevelName(logging.WARNING, f"[{red}!{reset}]")
+    logging.addLevelName(logging.INFO, f"[{cyan}*{reset}]")
+    logging.addLevelName(logging.DEBUG, f"[{cyan}**{reset}]")
+    logging.basicConfig(format="%(levelname)s%(message)s", level=logging.DEBUG if args.verbose else logging.INFO)
+
+ #   print_figlet()
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8",80))
+    ip = s.getsockname()[0]
+    s.close()
+
+    scanner = Complete_Network_Scanner(target=args.Target,my_ip=ip,protocol=args.protocol,timeout=args.timeout,interface=args.interface)
+    
+    if args.single_port:
+        scanner.vanilla_scan_single_host()
+    if args.discover_ARP:
+        scanner.host_discovery_using_arp_requests()
+    if args.scan_common:
+        scanner.common_scan(stealth=args.stealth,sv=args.scan_service)
+    if args.discover_arp:
+        ip_range, cidr = args.discover_arp
+        hosts, active_ips = scanner.host_discovery_using_arp_requests(ip_range, cidr) 
+    if args.vanilla_scan:
+        ip_address, port = args.vanilla_scan
+        scanner.vanilla_scan_single_host(ip_address, int(port))
+    elif args.scan_all:
+        scanner.scan_range_of_ports(start=0,end=65535,stealth=args.stealth,sv=args.scan_service)
+
+    elif args.scan_port:
+        try:
+            scanner.scan_range_of_ports(start=int(args.scan_port.split(',')[0]),end=int(args.scan_port.split(',')[1]),stealth=args.stealth,sv=args.scan_service)
+        except:
+            scanner.scan_range_of_ports(start=args.scan_port,stealth=args.stealth,sv=args.scan_service)
+
+    elif args.discover:
+        scanner.discover_net() 
+
+    else:
+        parser.print_help()
+
+    if args.scan_os:
+        scanner.os_scan()
