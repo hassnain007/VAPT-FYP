@@ -254,7 +254,7 @@ class Complete_Network_Scanner:
             hosts = [{'ip': received.psrc, 'mac': received.hwsrc} for sent, received in answered]
             active_ips = [host['ip'] for host in hosts]  # List of active IP addresses
 
-            # Display formatted details
+            # Display formatted detailss
             logging.info("Active Hosts:")
             for host in hosts:
                 logging.info(f"IP: {host['ip']}   MAC: {host['mac']}")
