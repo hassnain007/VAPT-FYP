@@ -389,7 +389,7 @@ if __name__ == '__main__':
     logging.addLevelName(logging.DEBUG, f"[{cyan}**{reset}]")
     logging.basicConfig(format="%(levelname)s%(message)s", level=logging.DEBUG if args.verbose else logging.INFO)
 
- #   print_figlet()
+ 
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8",80))
