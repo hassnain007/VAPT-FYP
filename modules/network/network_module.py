@@ -15,7 +15,7 @@ from colorama import Fore
 import rpycolors
 from progress.bar import ChargingBar
 import concurrent.futures
-from modules.network import service_detections
+import service_detections
 
 print = rpycolors.Console().print
 
@@ -233,7 +233,7 @@ class Complete_Network_Scanner:
 
     
 
-    def host_discovery_using_arp_requests(ip_range, cidr=24, timeout=5):
+    def host_discovery_using_arp_requests(self, ip_range, cidr=24, timeout=5):
         def is_valid_subnet(cidr):
             try:
                 cidr = int(cidr)
@@ -242,7 +242,8 @@ class Complete_Network_Scanner:
                 return False
 
         if not is_valid_subnet(cidr):
-            return "Invalid subnet mask. Please enter a number between 0 and 32.", []
+            logging.error("Invalid subnet mask. Please enter a number between 0 and 32.")
+            return [], []
 
         arp = ARP(pdst=ip_range)
         ether = Ether(dst="ff:ff:ff:ff:ff:ff")
@@ -254,16 +255,15 @@ class Complete_Network_Scanner:
             active_ips = [host['ip'] for host in hosts]  # List of active IP addresses
 
             # Display formatted details
-            print("Active Hosts:")
+            logging.info("Active Hosts:")
             for host in hosts:
-                print(f"IP: {host['ip']}   MAC: {host['mac']}")
-
-            return hosts, active_ips
+                logging.info(f"IP: {host['ip']}   MAC: {host['mac']}")
 
         except Exception as e:
-            return f"An error occurred during ARP request: {e}", []
-        
-   
+            logging.error(f"An error occurred during ARP request: {e}")
+            hosts, active_ips = [], []
+
+        return hosts, active_ips
         
 
 
@@ -283,7 +283,7 @@ class Complete_Network_Scanner:
         target_ip = self.target
         service_detections.scan_for_services(target_ip, ports)
         
-    def vanilla_scan_single_host(ip_address, port):
+    def vanilla_scan_single_host(self,ip_address, port):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(1)
@@ -294,8 +294,10 @@ class Complete_Network_Scanner:
             pass
         print(f"IP: {ip_address}, Port: {port}, Status: Closed or Filtered")
         return None
+
+
                 
-    def discover_net(self, ip_range=24):
+    def discover_net(self, ip_range,cidr=24):
         protocol = self.protocol
         base_ip = self.my_ip
 
@@ -349,8 +351,8 @@ class Complete_Network_Scanner:
 
 
 def arguments():
-    parser = argparse.ArgumentParser(description="Network module",usage="\n\network_module.py -sC 192.168.0.106\n\network_module.py -sA 192.168.0.106")
-    parser.add_argument('-vS', "--vanilla-scan", help="Run vanilla scan on specified IP and port", nargs=2, metavar=('IP', 'PORT'), type=str,action="count")
+    parser = argparse.ArgumentParser(description="Network module",usage="\n\network_module.py -sC 192.168.0.106\n\network_module.py -sA 192.168.0.106\npython network_module.py -vS 192.168.100.89 -port-vanilla 139")
+    parser.add_argument('-vS', "--vanilla-scan", help="Run vanilla scan on specified IP and port",action="count")
     parser.add_argument('-sC',"--scan-common",help="Scan common ports",action="count")
     parser.add_argument('-sA',"--scan-all",help="Scan all ports",action="count")
     parser.add_argument('-sO',"--scan-os",help="Scan OS",action="count")
@@ -363,14 +365,15 @@ def arguments():
     parser.add_argument('-st',"--stealth",help="Use Stealth scan method (TCP)",action="count")
     parser.add_argument('-v',"--verbose",action="count")
     parser.add_argument('Target',nargs='?',default=None)
-    parser.add_argument('-dARP', "--discover-arp", help="Discover hosts in the network using ARP request", nargs=2, metavar=('IP_RANGE', 'CIDR'), type=str,action="count")
+    parser.add_argument('-darp', "--discover-arp", nargs=2, metavar=('IP_RANGE', 'CIDR'), help="Discover hosts in the network using ARP request")
+    parser.add_argument('-port-vanilla', help="Specify the port for vanilla scan", type=int, default=139)
     args = parser.parse_args()
     
 
     if not args.discover and not args.Target:
         sys.exit(parser.print_help())
 
-    if not args.scan_common and not args.scan_all and not args.scan_os and not args.scan_port and not args.discover and not args.vanilla_scan and not args.dARP:
+    if not args.scan_common and not args.scan_all and not args.scan_os and not args.scan_port and not args.discover and not args.vanilla_scan and not args.discover_arp:
         sys.exit(parser.print_help())
 
     return (args, parser)
@@ -395,18 +398,20 @@ if __name__ == '__main__':
 
     scanner = Complete_Network_Scanner(target=args.Target,my_ip=ip,protocol=args.protocol,timeout=args.timeout,interface=args.interface)
     
-    if args.single_port:
-        scanner.vanilla_scan_single_host()
-    if args.discover_ARP:
-        scanner.host_discovery_using_arp_requests()
+    
+    if args.discover_arp:
+        ip_range = args.Target 
+        cidr = int(args.discover_arp[0]) if len(args.discover_arp) > 0 else 24
+        scanner.host_discovery_using_arp_requests(ip_range, cidr=cidr)
     if args.scan_common:
         scanner.common_scan(stealth=args.stealth,sv=args.scan_service)
     if args.discover_arp:
         ip_range, cidr = args.discover_arp
         hosts, active_ips = scanner.host_discovery_using_arp_requests(ip_range, cidr) 
     if args.vanilla_scan:
-        ip_address, port = args.vanilla_scan
-        scanner.vanilla_scan_single_host(ip_address, int(port))
+        ip_address = args.Target
+        port = args.port_vanilla
+        scanner.vanilla_scan_single_host(ip_address, port)
     elif args.scan_all:
         scanner.scan_range_of_ports(start=0,end=65535,stealth=args.stealth,sv=args.scan_service)
 
