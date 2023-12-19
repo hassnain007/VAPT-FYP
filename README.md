@@ -1,6 +1,6 @@
-Penetration Testing Tool
+network  and web testing Tool
 Project Overview
-The Penetration Testing Tool is a comprehensive solution tailored for web and network security assessments. It equips security professionals with a robust set of features to identify vulnerabilities, assess network services, and evaluate web applications.
+This Tool is a comprehensive solution for web and network security assessments.with features to identify vulnerabilities, assess network services, and evaluate web applications.
 
 Key Features
 
