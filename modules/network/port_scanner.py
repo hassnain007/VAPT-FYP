@@ -87,10 +87,13 @@ def vanilla_scan_single_host(ip_address, port):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.settimeout(1)
             s.connect((ip_address, port))
+            print(f"IP: {ip_address}, Port: {port}, Status: Open")
             return port
     except Exception:
         pass
+    print(f"IP: {ip_address}, Port: {port}, Status: Closed or Filtered")
     return None
+
 
 def vanilla_scan(ip_address, ports):
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -136,5 +139,5 @@ def xmas_scan(ip_address, ports):
 if __name__ == "__main__":
     # ... (your existing code for the main function)
  #vanilla_scan("192.168.100.1",(21,22,23,45,53,443,445,139))
-    perform_syn_scan("192.168.100.89",(22,23,25,139,135,109,110,119))
+    vanilla_scan_single_host("192.168.100.89",(139))
  
