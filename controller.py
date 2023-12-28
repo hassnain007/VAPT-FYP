@@ -2,16 +2,13 @@
 import os
 import pyfiglet
 from core.colors import *
-from modules.web.web_controller import WebController
-from modules.network.net_controller import NetworkController
+from modules.web.web_controller import *
+from modules.network.net_controller import *
 
 
 
 if __name__ == '__main__':
-    wc = WebController()
-    nc = NetworkController()
     
-
     def banner():
         result = pyfiglet.figlet_format("VAPT Tool") 
         print(result) 
@@ -28,9 +25,12 @@ if __name__ == '__main__':
             banner()
             choice = menu()
             if choice == "1":
-                wc.run()
+                choice = web_menu()
+                runWeb(choice)
             elif choice == "2":
-                nc.run()
+                choice = network_menu()
+                runNet(choice)
+                
             else:
                 print(f"\n\n{red}Invalid Choice! Try Again.\n")
         except KeyboardInterrupt:
