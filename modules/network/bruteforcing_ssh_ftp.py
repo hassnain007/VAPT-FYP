@@ -6,7 +6,7 @@ import termcolor
 import threading
 import time
 
-def ssh_bruteforce(host, protocol, credentials_file, ports=None):
+def bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports=None):
     stop_flag = 0
     lock = threading.Lock()
     threads = []
@@ -94,4 +94,4 @@ protocol_input = input('[+] Protocol (ssh/ftp): ')
 credentials_file_input = input('[+] Username:Password File: ')
 print('\n')
 
-ssh_bruteforce(host_input, protocol_input, credentials_file_input)
+bruteforce_ssh_and_ftp(host_input, protocol_input, credentials_file_input)
