@@ -6,7 +6,7 @@ This Tool is a comprehensive solution for web and network security assessments.w
 
 **Network**:
 	**Port Scanning** : Conduct network reconnaissance using SYN, Ping, Vanilla, to identify open ports.
-	**Service Identification**: Identify network services and capture service banners for detailed analysis.
+	**Service Identification**: Identify network services and capture service banners for detailed analysis.             
 	**Network Protocol Bruteforcing**: Perform credential bruteforcing on authentication protocols such as SSH, FTP, and more.**
 	**Vulnerability Detection**** : Detect vulnerabilities in discovered network services.
  
