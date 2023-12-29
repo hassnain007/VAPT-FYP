@@ -87,11 +87,3 @@ def bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports=None):
 
     if stop_flag == 1:
         exit()
-
-# Example usage
-host_input = input('[+] Target Address: ')
-protocol_input = input('[+] Protocol (ssh/ftp): ')
-credentials_file_input = input('[+] Username:Password File: ')
-print('\n')
-
-bruteforce_ssh_and_ftp(host_input, protocol_input, credentials_file_input)
