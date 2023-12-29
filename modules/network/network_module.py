@@ -36,6 +36,17 @@ class Complete_Network_Scanner:
         self.protocol = protocol
         self.timeout = timeout
         self.interface = interface
+    
+        
+
+    def set_my_ip(self, my_ip):
+        self.my_ip = my_ip
+        
+    def set_target(self, target):
+        self.target = target
+        
+    def set_protocol(self, protocol):
+        self.protocol = protocol
 
     def port_scan(self,stealth=None,port=80):
         protocol = self.protocol if self.protocol else "TCP"
@@ -279,9 +290,13 @@ class Complete_Network_Scanner:
 
         if host_found:
             result[index] = host_found[0]
+            
+
     def service_Scan(self, ports):
         target_ip = self.target
         service_detections.scan_for_services(target_ip, ports)
+        
+
         
     def vanilla_scan_single_host(self,ip_address, port):
         try:
@@ -351,7 +366,7 @@ class Complete_Network_Scanner:
 
 
 def arguments():
-    parser = argparse.ArgumentParser(description="Network module",usage="\n\network_module.py -sC 192.168.0.106\n\network_module.py -sA 192.168.0.106\npython network_module.py -vS 192.168.100.89 -port-vanilla 139")
+    parser = argparse.ArgumentParser(description="Network module",usage="\n\network_module.py -sC 192.168.0.106\n\network_module.py \nto scan all ports use this cmd:-sA 192.168.0.106\nto scan a a port use this command replace the port and target\n:python network_module.py -vS 192.168.100.89 -port-vanilla 139\n to scan all ports use this cmd:\nsA target ip address\n to discover hosts use -d\nIt'seasy")
     parser.add_argument('-vS', "--vanilla-scan", help="Run vanilla scan on specified IP and port",action="count")
     parser.add_argument('-sC',"--scan-common",help="Scan common ports",action="count")
     parser.add_argument('-sA',"--scan-all",help="Scan all ports",action="count")
