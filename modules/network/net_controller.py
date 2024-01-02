@@ -1,6 +1,5 @@
 
 import bruteforcing_ssh_ftp
-import network_module
 import service_detections 
 import sys
 sys.path.insert(0, 'D:/final_clonning  --repository--fyp')
@@ -27,14 +26,14 @@ def runNet(choice):
     if choice == "1":
         #syn scan
         target_i = input("Enter target IP: ")
-        port_i = int(input("Enter  port to scan:    /t e.g:80"))          
+        port_i = int(input("Enter  port to scan:    e.g:80\n"))          
         syn_Scan.syn_scan(target=target_i,port=port_i)
     elif choice == "2":
         #tcp connect scan
                 
         target_i = input("Enter target IP: ")
-        port_i = int(input("Enter  port to scan:    /t e.g:80"))
-        tcp_Scan.tcp_connect_scan(target=target_i,port=port_i)
+        port_i = int(input("Enter  port to scan:    e.g:80\n"))
+        tcp_Scan.tcp_connect_scan(ip_address=target_i,port=port_i)
         
     elif choice == "3":
         # ****  Service Detection ******    
@@ -50,12 +49,20 @@ def runNet(choice):
 
     elif choice == "4":
         #  **** scan range of ports ****
-
-        target_i = input("Enter target IP: ")
-        protocol_i = input("Enter protocol to use (ICMP/UDP/TCP): ")
-        start_port_i = int(input("Enter start port: "))
-        end_port_i = int(input("Enter end port (press Enter for single port): ")) 
-        syn_Scan.scan_range(target=target_i,start_port=start_port_i,end_port=end_port_i)
+        s_type = input("which type of scan do you want to perform \nsyn \ntcp\nEnter e.g:syn or tcp\n")
+        if s_type == 'syn':
+            target_i = input("Enter target IP: ")
+            protocol_i = input("Enter protocol to use (ICMP/UDP/TCP): ")
+            start_port_i = int(input("Enter start port: "))
+            end_port_i = int(input("Enter end port (press Enter for single port): ")) 
+            syn_Scan.scan_range(target=target_i,start_port=start_port_i,end_port=end_port_i)
+        elif s_type == 'tcp':
+            target_i = input("Enter target IP: ")
+            start_port_i = int(input("Enter start port: "))
+            end_port_i = int(input("Enter end port (press Enter for single port): ")) 
+            tcp_Scan.scan_range(target=target_i,start_port=start_port_i,end_port=end_port_i)
+        else:
+            print("please chose either syn or tcp")
         
     
     elif choice == "5":

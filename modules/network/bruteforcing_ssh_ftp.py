@@ -64,17 +64,4 @@ def bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports=None):
                             print(f'[-] Unknown protocol: {protocol}')
                             sys.exit(1)
 
-if __name__ == "__main__":
-    host = input("Enter the host IP address: ")
-    protocol = input("Enter the protocol (ssh or ftp): ")
-    credentials_file = input("Enter the path to the credentials file: ")
-    ports = input("Enter the ports (comma-separated, leave blank for default): ")
 
-    if ports:
-        try:
-            ports = list(map(int, ports.split(',')))
-        except ValueError:
-            print("Invalid ports input. Please enter comma-separated integers.")
-            sys.exit(1)
-
-    bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports)
