@@ -5,13 +5,15 @@ import service_detections
 import sys
 sys.path.insert(0, 'D:/final_clonning  --repository--fyp')
 from core.colors import *
+import syn_Scan
+import tcp_Scan
 
 def network_menu():
     print(f"\t\t{green}===== Network Scan Menu =====")
     print(f"\t\t{green}[1]. syn scan (tcp/udp)")
-    print(f"\t\t{green}[2]. tcp connect scan(tcp/udp)")
+    print(f"\t\t{green}[2]. tcp connect scan(tcp)")
     print(f"\t\t{green}[3]. Service detection")
-    print(f"\t\t{green}[4]. Scan range of ports")
+    print(f"\t\t{green}[4]. Scan range of ports [*syn scan*]")
     print(f"\t\t{green}[5]. Bruteforcing SSH and FTP")
     print(f"\t\t{green}[6]. Operating system detection")
     print(f"\t\t{green}[7]. Host discovery (icmp)")
@@ -24,30 +26,19 @@ def runNet(choice):
     
     if choice == "1":
         #syn scan
-        scanner = network_module.Complete_Network_Scanner()
-        target = input("Enter target IP: ")
-        protocol = input("Enter protocol to use (ICMP/UDP/TCP): ")
-        start_port = int(input("Enter  port to scan:    /t e.g:80"))
-              
-        scanner.set_protocol(protocol)
-        scanner.set_target(target)
-        scanner.scan_range_of_ports(start=start_port,  stealth=True, sv=False)
+        target_i = input("Enter target IP: ")
+        port_i = int(input("Enter  port to scan:    /t e.g:80"))          
+        syn_Scan.syn_scan(target=target_i,port=port_i)
     elif choice == "2":
         #tcp connect scan
-         # ****  syn scan  ****
-        scanner = network_module.Complete_Network_Scanner()
-        target = input("Enter target IP: ")
-        protocol = input("Enter protocol to use (UDP/TCP): ")
-        start_port = int(input("Enter  port to scan:    /t e.g:80"))
-              
-        scanner.set_protocol(protocol)
-        scanner.set_target(target)
-        scanner.scan_range_of_ports(start=start_port,  stealth=False, sv=False)
+                
+        target_i = input("Enter target IP: ")
+        port_i = int(input("Enter  port to scan:    /t e.g:80"))
+        tcp_Scan.tcp_connect_scan(target=target_i,port=port_i)
         
     elif choice == "3":
         # ****  Service Detection ******    
         # Get user input for IP address and ports
-        scanner = network_module.Complete_Network_Scanner()
         ip_address = input("Enter the target IP address: ")
         ports_input = input("Enter the target port(s), separated by commas: ")
 
@@ -59,16 +50,13 @@ def runNet(choice):
 
     elif choice == "4":
         #  **** scan range of ports ****
-        scanner = network_module.Complete_Network_Scanner()
-        target = input("Enter target IP: ")
-        protocol = input("Enter protocol to use (ICMP/UDP/TCP): ")
-        start_port = int(input("Enter start port: "))
-        end_port = int(input("Enter end port (press Enter for single port): ") or start_port)
-        stealth = input("Enable stealth mode? (y/n): ").lower() == 'y'
 
-        scanner.set_protocol(protocol)
-        scanner.set_target(target)
-        scanner.scan_range_of_ports(start=start_port, end=end_port, stealth=stealth, sv=False)
+        target_i = input("Enter target IP: ")
+        protocol_i = input("Enter protocol to use (ICMP/UDP/TCP): ")
+        start_port_i = int(input("Enter start port: "))
+        end_port_i = int(input("Enter end port (press Enter for single port): ")) 
+        syn_Scan.scan_range(target=target_i,start_port=start_port_i,end_port=end_port_i)
+        
     
     elif choice == "5":
         # Bruteforcing SSH and FTP
