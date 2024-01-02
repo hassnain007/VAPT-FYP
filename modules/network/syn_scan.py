@@ -103,5 +103,3 @@ def scan_multiple_ports(ip_address, port_list):
 
         syn_scan(ip_address, port)
 
-syn_scan("192.168.100.1",23)
-syn_scan("192.168.100.1",50)
