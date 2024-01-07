@@ -3,7 +3,8 @@ import os
 import pyfiglet
 from core.colors import *
 from modules.web.web_controller import *
-from modules.network.net_controller import *
+#from modules.network.net_controller import *
+
 
 
 
@@ -28,8 +29,9 @@ if __name__ == '__main__':
                 choice = web_menu()
                 runWeb(choice)
             elif choice == "2":
-                choice = network_menu()
-                runNet(choice)
+                # choice = network_menu()
+                # runNet(choice)
+                pass
                 
             else:
                 print(f"\n\n{red}Invalid Choice! Try Again.\n")

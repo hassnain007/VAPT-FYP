@@ -3,23 +3,23 @@ from random import choice
 from string import ascii_lowercase, ascii_uppercase
 from requests import get, head
 import threading
+from core.colors import *
 import argparse
 from os import path
+import os
+from concurrent.futures import ThreadPoolExecutor
+
+vapt_path = os.environ['PYTHONPATH'].split(os.pathsep)
+project_root = os.path.abspath(vapt_path[0])
 
 class Fuzzer:
-    def __init__(self, wordlist, url, threads, cookies, useragent, output, username, password, extended, proxy, extensions, forward_slash, status_codes, auto, force, quite):
+    def __init__(self, wordlist, url, threads, output, extended,extensions, status_codes, auto, force, quite):
         self.wordlist = wordlist
         self.url = url
         self.threads = threads
-        self.cookies = cookies
-        self.useragent = useragent
         self.output = output
-        self.username = username
-        self.password = password
         self.extended = extended
-        self.proxy = proxy
         self.extensions = extensions
-        self.forward_slash = forward_slash
         self.status_codes = status_codes
         self.auto = auto
         self.force = force
@@ -42,37 +42,44 @@ class Fuzzer:
         return None
 
     def setup_valid_status_codes(self):
-        valid = [200, 204, 301, 302, 307, 403]
+        valid = [200, 204, 301, 302, 403]
         if self.status_codes is not None:
             status_codes = self.status_codes.replace(' ', '').split(",")
             valid = [int(i) for i in status_codes]
         return valid
 
-    def random_path(self):
-        chars = ascii_lowercase + ascii_uppercase
-        newstr = 'totallynotavalidpage'
-        for i in range(15):
-            newstr += choice(chars)
-        return newstr
 
     def find_s(self, wordlist):
-        for i in wordlist:
-            r = head(self.base_url + i, headers=self.headers, proxies=self.proxy, auth=self.auth)
-            if r.status_code in self.valid:
-                if not self.extended:
-                    print("/" + i + " (Status: %s)" % (r.status_code))
-                else:
-                    print(self.base_url + i + " (Status: %s)" % (r.status_code))
-                if self.output is not None:
-                    with open(self.output, "a") as f:
-                        f.write(self.base_url + i + " (Status: %s)" % (r.status_code) + "\n")
-
+        words = wordlist.split()
+        for i in words:
+            try:
+                r = head(self.base_url + i,)
+                if r.status_code in self.valid:
+                    if r.status_code in [200,204]:
+                        color = green
+                    elif r.status_code in [401,403]:
+                        color = red
+                    elif r.status_code in [301,302]:
+                        color = blue
+                    if not self.extended:
+                        print(f"{blue}/{i} {color}{r.status_code}{end}")
+                    else:
+                        print(self.base_url + i + " (Status: %s)" % (r.status_code))
+                    if self.output is not None:
+                        with open(self.output, "a") as f:
+                            f.write(self.base_url + i + " (Status: %s)" % (r.status_code) + "\n")
+            except KeyboardInterrupt:
+                print(f"{bad}Interrupted")
+            except:
+                pass
+            
     def find_w(self, wordlist):
         path = self.random_path()
         r = get(self.base_url + path).content
-        nw = len(r.split(' '))
+        nw = len(r.split(b' '))
         for i in wordlist:
-            r = len(get(self.base_url + i, headers=self.headers, proxies=self.proxy, auth=self.auth).content.split(' '))
+            r = get(self.base_url + i).content
+            r = len(r.split(b' '))
             r -= len(i.split(' ')) - 1
             if r != nw:
                 if not self.extended:
@@ -83,21 +90,13 @@ class Fuzzer:
                     with open(self.output, "a") as f:
                         f.write(self.base_url + i + " (Words: %s)" % (r) + "\n")
 
-    def chunk(self, seq, num):
-        avg = len(seq) / float(num)
-        out = []
-        last = 0.0
-        while last < len(seq):
-            out.append(seq[int(last):int(last + avg)])
-            last += avg
-        return out
 
     def check(self):
         if self.auto:
             return False
         if self.force:
             return True
-        path = self.random_path()
+        path = open(self.wordlist).read()
         r = get(self.base_url + path)
         if r.status_code in self.valid:
             if not self.auto:
@@ -133,16 +132,19 @@ class Fuzzer:
 
         if not self.quite:
             print(banner)
-
-        w = self.chunk(self.wordlist, self.threads)
+            
+        w = open(self.wordlist).read().splitlines()
         threads = []
 
         if self.check():
-            for i in w:
-                x = threading.Thread(target=self.find_s, args=(i,))
-                x.daemon = True
-                threads.append(x)
-                x.start()
+            with ThreadPoolExecutor(max_workers=self.threads) as executor:
+                executor.map(self.find_s,w)
+                
+        #     for i in w:
+        #         x = threading.Thread(target=self.find_s, args=(i,))
+        #         x.daemon = True
+        #         threads.append(x)
+        #         x.start()
         elif self.auto:
             for i in w:
                 x = threading.Thread(target=self.find_w, args=(i,))
@@ -165,43 +167,20 @@ class Fuzzer:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-w", "--wordlist", help="path to wordlist")
-    parser.add_argument("-u", "--url", help="address of remote site")
-    parser.add_argument("-t", "--threads", help="number of threads to use", default=20)
-    parser.add_argument("--auto", action="store_true", help="shows response on basis of number of words")
-    parser.add_argument("-f", "--force", action="store_true", help="use to force status check")
-    parser.add_argument("-a", "--user-agent", help="add custom user agent")
-    parser.add_argument("-c", "--cookies", help="pass cookies as a string")
-    parser.add_argument("-fs", "--forward-slash", help="append a forward slash to all requests", action="store_true")
-    parser.add_argument("-e", "--extended", help="show extended urls", action="store_true")
-    parser.add_argument("-p", "--proxy", help="Proxy to use for requests [http(s)://host:port]")
-    parser.add_argument("-q", "--quite", action="store_true", help="doesnt print banner and other stuff")
-    parser.add_argument("-o", "--output", help="output to a file")
-    parser.add_argument('-s', '--status-codes', help='manually pass the positive status codes (default "200,204,301,302,307,403")')
-    parser.add_argument("-U", "--username", help="username for basic http auth")
-    parser.add_argument("-P", "--password", help="password for basic http auth")
-    parser.add_argument("-x", "--extensions", help="file extension(s) to search for")
-
-    args = parser.parse_args()
-
+    word_list = os.path.join(project_root, "db", "directory-list-2.3-small.txt")
+    
     Fuzzer = Fuzzer(
-        wordlist=args.wordlist,
-        url=args.url,
-        threads=args.threads,
-        cookies=args.cookies,
-        useragent=args.user_agent,
-        output=args.output,
-        username=args.username,
-        password=args.password,
-        extended=args.extended,
-        proxy=args.proxy,
-        extensions=args.extensions,
-        forward_slash=args.forward_slash,
-        status_codes=args.status_codes,
-        auto=args.auto,
-        force=args.force,
-        quite=args.quite
+        wordlist=word_list,
+        url="https://iulms.edu.pk/",
+        threads=10,
+        output=None,
+        extended=False,
+        quite=False,
+        status_codes=None,
+        extensions=None,
+        auto=False,
+        force=True 
     )
 
     Fuzzer.run()
+    pass
